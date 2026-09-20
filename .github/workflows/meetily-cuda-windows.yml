@@ -19,7 +19,9 @@ on:
 
 jobs:
   build-cuda-windows:
-    runs-on: windows-latest
+    # Pin VS2022 image: CUDA 12.4's nvcc can't pair with the newer VS2026/CMake4.4
+    # on windows-latest ("No CUDA toolset found"). VS2022 + CUDA 12.4 is the known-good combo.
+    runs-on: windows-2022
     permissions:
       contents: write
     steps:
