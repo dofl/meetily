@@ -41,8 +41,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install pinned pnpm (match Meetily's BUILDING.md)
         run: npm install -g pnpm@9.15.9
