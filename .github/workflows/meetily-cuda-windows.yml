@@ -54,6 +54,21 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      - name: Build llama-helper sidecar with CUDA (the built-in Qwen summarizer)
+        working-directory: llama-helper
+        env:
+          CMAKE_CUDA_ARCHITECTURES: "61"
+          CMAKE_CUDA_STANDARD: "17"
+        run: cargo build --release --features cuda
+
+      - name: Install llama-helper sidecar into src-tauri/binaries
+        shell: bash
+        run: |
+          mkdir -p frontend/src-tauri/binaries
+          cp llama-helper/target/release/llama-helper.exe \
+             frontend/src-tauri/binaries/llama-helper-x86_64-pc-windows-msvc.exe
+          ls -lh frontend/src-tauri/binaries/llama-helper-*.exe
+
       - name: Build Meetily with CUDA for GTX 1650
         uses: tauri-apps/tauri-action@v0
         env:
