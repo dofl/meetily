@@ -31,9 +31,11 @@ jobs:
 
       - name: Install CUDA 12.4 (GTX 1650 = Turing compute 6.1)
         # Pins a toolkit that still supports the 1650 (CUDA 13 dropped old archs).
-        uses: Jimver/configure-cuda@v1
+        # driver not installed — not needed to compile, only to run.
+        uses: Jimver/cuda-toolkit@v0.2.36
         with:
-          cuda: "12.4.1"
+          cuda: "12.4.0"
+          method: "network"
 
       - name: Setup Node 20
         uses: actions/setup-node@v4
