@@ -1,0 +1,73 @@
+# Meetily CUDA build for the GTX 1650 (Windows)
+#
+# Produces a Windows installer where:
+#   - the built-in Qwen summarizer (llama-helper sidecar) offloads to the GPU
+#   - the Whisper transcription engine is CUDA-enabled (optional)
+#   - Parakeet transcription is unchanged (CPU, fast enough)
+#
+# Model (e.g. a 3B Qwen) is selected AFTER install: Preferences > Summary Model > Built-in AI.
+#
+# How to run (free GitHub account, browser only):
+#   1. Fork https://github.com/Zackriya-Solutions/meetily
+#   2. In your fork: Add file > Create new file > path: .github/workflows/meetily-cuda-windows.yml > paste this > Commit
+#   3. Actions tab > "Meetily CUDA (GTX 1650)" > Run workflow
+#   4. Download the "meetily-cuda-windows" artifact when it finishes.
+name: "Meetily CUDA (GTX 1650)"
+
+on:
+  workflow_dispatch:   # run manually
+
+jobs:
+  build-cuda-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install CUDA 12.4 (GTX 1650 = Turing compute 6.1)
+        # Pins a toolkit that still supports the 1650 (CUDA 13 dropped old archs).
+        uses: Jimver/configure-cuda@v1
+        with:
+          cuda: "12.4.1"
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install pinned pnpm (match Meetily's BUILDING.md)
+        run: npm install -g pnpm@9.15.9
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Meetily with CUDA for GTX 1650
+        uses: tauri-apps/tauri-action@v0
+        env:
+          TAURI_GPU_FEATURE: cuda
+          CMAKE_CUDA_ARCHITECTURES: "61"   # 61 = GTX 1650 (Turing, compute 6.1)
+          CMAKE_CUDA_STANDARD: "17"
+        with:
+          projectPath: frontend
+          args: --target x86_64-pc-windows-msvc --features cuda
+
+      - name: Upload CUDA installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: meetily-cuda-windows
+          path: |
+            frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+            frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          if-no-files-found: warn
+          retention-days: 30
